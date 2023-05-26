@@ -1,6 +1,6 @@
 <?php
 
-use Cinco\HealthCheck\Http\Controllers\HealthCheckController;
+use Cinco\FaustopHealthcheck\Http\Controllers\HealthCheckController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/health-check/readiness', [HealthCheckController::class, 'healthCheck'])->name('health-check.readiness');
