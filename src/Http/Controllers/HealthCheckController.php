@@ -7,8 +7,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Routing\Controller as BaseController;
 
-class HealthCheckController extends Controller
+class HealthCheckController extends BaseController
 {
     public function healthCheck()
     {
@@ -17,7 +18,7 @@ class HealthCheckController extends Controller
             $DB = DB::connection();
 
             $redisPing = $redis->ping() ? 'Running at ' . Carbon::now() : 'down';
-            $DBPing = $DB->getPdo() ? 'Running at ' . Carbon::now() : 'down';
+            $DBPing = DB::connection()->getPdo() ? 'Running at ' . Carbon::now() : 'down';
 
             return [
                 'redis' => $redisPing,
