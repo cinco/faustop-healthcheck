@@ -1,0 +1,18 @@
+{
+    "name": "cinco/faustop-healthcheck",
+    "description": "Healthcheck Readiness and Liveness for Laravel",
+    "type": "composer-plugin",
+    "license": "gnu-gpl",
+    "autoload": {
+        "psr-4": {
+            "Cinco\\FaustopHealthcheck\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "cinco euzebio"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {}
+}
