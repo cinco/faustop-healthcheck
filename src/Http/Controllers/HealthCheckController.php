@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace Cinco\FaustopHealthcheck\Http\Controllers;
 
 use Carbon\Carbon;
 use Illuminate\Http\Request;
