@@ -10,11 +10,13 @@
     },
     "authors": [
         {
-            "name": "cinco euzebio"
+            "name": "cinco euzebio",
+            "email": "cincoecinco@gmail.com"
         }
     ],
     "minimum-stability": "dev",
     "require": {
-        "php": ">=7.1"
+        "php": ">=7.1",
+        "laravel": "*"
     }
 }
