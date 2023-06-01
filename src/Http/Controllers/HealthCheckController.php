@@ -14,11 +14,18 @@ class HealthCheckController extends BaseController
     public function healthCheck()
     {
         try {
-            $redis = Redis::connection();
-            $DB = DB::connection();
+            $redisPing = '';
+            $DBPing = '';
 
-            $redisPing = $redis->ping() ? 'Running at ' . Carbon::now() : 'down';
-            $DBPing = DB::connection()->getPdo() ? 'Running at ' . Carbon::now() : 'down';
+            if (env('REDIS_HEALTH', true)) {
+                $redis = Redis::connection();
+                $redisPing = $redis->ping() ? 'Running at ' . Carbon::now() : 'down';
+            }
+
+            if (env('DB_HEALTH', true)) {
+                $DB = DB::connection();
+                $DBPing = DB::connection()->getPdo() ? 'Running at ' . Carbon::now() : 'down';
+            }
 
             return [
                 'redis' => $redisPing,
