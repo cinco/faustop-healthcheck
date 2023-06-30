@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Routing\Controller as BaseController;
+use InvalidArgumentException;
 
 class HealthCheckController extends BaseController
 {
@@ -27,10 +28,23 @@ class HealthCheckController extends BaseController
                 $DBPing = DB::connection()->getPdo() ? 'Running at ' . Carbon::now() : 'down';
             }
 
+            if (!is_dir(storage_path('logs'))) {
+                throw new InvalidArgumentException('Logs directory not found');
+            }
+            if (!is_dir(storage_path('framework/cache'))) {
+                throw new InvalidArgumentException('Cache directory not found');
+            }
+
             return [
                 'redis' => $redisPing,
                 'DB' => $DBPing
             ];
+
+        } catch (InvalidArgumentException $directories) {
+            Log::error($_SERVER['HOSTNAME'] . ' - [' . $_SERVER["APP_NAME"] . '] - Healthcheck: directory not found');
+            Log::error($th->getMessage());
+            return response('Directory Not Found <br><img src="https://j.gifs.com/m8LGL3.gif"></img><br> Directory Not Found<br> msg from: <b>' . $_SERVER['HOSTNAME'] . '</b>', 500);
+        
         } catch (\Throwable $th) {
             Log::error($_SERVER['HOSTNAME'] . ' - [' . $_SERVER["APP_NAME"] . '] - Healthcheck: database is down');
             Log::error($th->getMessage());
