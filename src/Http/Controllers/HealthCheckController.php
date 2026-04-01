@@ -16,6 +16,7 @@ class HealthCheckController extends BaseController
         try {
             $redisPing = '';
             $DBPing = '';
+            $storagePing = '';
 
             if (env('REDIS_HEALTH', true)) {
                 $redis = Redis::connection();
@@ -27,16 +28,33 @@ class HealthCheckController extends BaseController
                 $DBPing = DB::connection()->getPdo() ? 'Running at ' . Carbon::now() : 'down';
             }
 
+            if (env('STORAGE_HEALTH', false)) {
+                $storagePing = $this->checkStorage();
+            }
+
             return [
                 'redis' => $redisPing,
-                'DB' => $DBPing
+                'DB' => $DBPing,
+                'storage' => $storagePing,
             ];
         } catch (\Throwable $th) {
-            Log::error($_SERVER['HOSTNAME'] . ' - [' . $_SERVER["APP_NAME"] . '] - Healthcheck: database is down');
+            Log::error($_SERVER['HOSTNAME'] . ' - [' . $_SERVER["APP_NAME"] . '] - Healthcheck: service is down');
             Log::error($th->getMessage());
 
             $message_error = '<img src="https://j.gifs.com/m8LGL3.gif"></img>';
-            return response('Database is <b>down</b> <br><img src="https://j.gifs.com/m8LGL3.gif"></img><br> Database is <b>down</b><br> msg from: <b>' . $_SERVER['HOSTNAME'] . '</b>', 500);
+            return response('Service is <b>down</b> <br><img src="https://j.gifs.com/m8LGL3.gif"></img><br> Service is <b>down</b><br> msg from: <b>' . $_SERVER['HOSTNAME'] . '</b>', 500);
         }
+    }
+
+    private function checkStorage(): string
+    {
+        $subpath = env('STORAGE_HEALTH_PATH', 'framework/cache');
+        $path = storage_path($subpath);
+
+        if (!is_dir($path)) {
+            throw new \RuntimeException("Storage directory not found: {$subpath}");
+        }
+
+        return 'Running at ' . Carbon::now();
     }
 }
