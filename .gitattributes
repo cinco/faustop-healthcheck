@@ -1,0 +1,10 @@
+# Fora do tarball de dist que o `git archive` gera e o Composer baixa.
+#
+# Este pacote é library instalada em apps Laravel de produção: no `vendor/`
+# deles só precisa chegar o que o autoload usa em runtime (src/), o manifesto
+# (composer.json) e o README, que é a cara do pacote no Packagist. Todo o resto
+# é peso baixado a cada build de imagem, em cada app.
+
+/docs/          export-ignore
+/.gitattributes export-ignore
+/.gitignore     export-ignore
