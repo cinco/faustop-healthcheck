@@ -11,39 +11,87 @@ use Illuminate\Routing\Controller as BaseController;
 
 class HealthCheckController extends BaseController
 {
-    public function healthCheck()
+    /**
+     * Liveness: prova que o processo PHP responde. Nada mais.
+     *
+     * NÃO adicione dependência externa aqui (Redis, banco, storage, HTTP).
+     * Esta é a rota para a qual o healthcheck do container deve apontar: se ela
+     * consultar uma dependência que oscila, o Docker mata um container saudável.
+     */
+    public function liveness()
     {
-        try {
-            $redisPing = '';
-            $DBPing = '';
-            $storagePing = '';
+        return response()->json([
+            'status' => 'alive',
+            'timestamp' => Carbon::now()->toIso8601String(),
+        ], 200);
+    }
 
+    /**
+     * Readiness: verifica se as dependências externas respondem.
+     *
+     * Para orquestrador/balanceador decidir se manda tráfego — nunca para
+     * decidir se mata o container.
+     */
+    public function readiness()
+    {
+        $checks = [
+            'redis' => '',
+            'DB' => '',
+            'storage' => '',
+        ];
+        $checking = null;
+
+        try {
             if (env('REDIS_HEALTH', true)) {
+                $checking = 'redis';
                 $redis = Redis::connection();
-                $redisPing = $redis->ping() ? 'Running at ' . Carbon::now() : 'down';
+                $checks['redis'] = $redis->ping() ? 'Running at ' . Carbon::now() : 'down';
             }
 
             if (env('DB_HEALTH', true)) {
-                $DB = DB::connection();
-                $DBPing = DB::connection()->getPdo() ? 'Running at ' . Carbon::now() : 'down';
+                $checking = 'DB';
+                $checks['DB'] = DB::connection()->getPdo() ? 'Running at ' . Carbon::now() : 'down';
             }
 
             if (env('STORAGE_HEALTH', false)) {
-                $storagePing = $this->checkStorage();
+                $checking = 'storage';
+                $checks['storage'] = $this->checkStorage();
             }
 
-            return [
-                'redis' => $redisPing,
-                'DB' => $DBPing,
-                'storage' => $storagePing,
-            ];
+            return response()->json($checks, $this->anyDown($checks) ? 503 : 200);
         } catch (\Throwable $th) {
-            Log::error($_SERVER['HOSTNAME'] . ' - [' . $_SERVER["APP_NAME"] . '] - Healthcheck: service is down');
+            $hostname = $this->hostname();
+
+            Log::error($hostname . ' - [' . $this->appName() . '] - Healthcheck: service is down');
             Log::error($th->getMessage());
 
-            $message_error = '<img src="https://j.gifs.com/m8LGL3.gif"></img>';
-            return response('Service is <b>down</b> <br><img src="https://j.gifs.com/m8LGL3.gif"></img><br> Service is <b>down</b><br> msg from: <b>' . $_SERVER['HOSTNAME'] . '</b>', 500);
+            if ($checking !== null) {
+                $checks[$checking] = 'down';
+            }
+
+            return response()->json(array_merge($checks, [
+                'host' => $hostname,
+                'error' => class_basename($th),
+            ]), 503);
         }
+    }
+
+    /**
+     * @deprecated 0.10.0 Use readiness(). Mantido para apps que apontam rota
+     *             própria para este método.
+     */
+    public function healthCheck()
+    {
+        return $this->readiness();
+    }
+
+    /**
+     * Dependência habilitada que respondeu falsy sem lançar exceção.
+     * Sem isto o corpo diz "down" e o status diz 200.
+     */
+    private function anyDown(array $checks): bool
+    {
+        return in_array('down', $checks, true);
     }
 
     private function checkStorage(): string
@@ -56,5 +104,17 @@ class HealthCheckController extends BaseController
         }
 
         return 'Running at ' . Carbon::now();
+    }
+
+    private function hostname(): string
+    {
+        return ($_SERVER['HOSTNAME'] ?? '') ?: (gethostname() ?: 'unknown');
+    }
+
+    private function appName(): string
+    {
+        $name = ($_SERVER['APP_NAME'] ?? '') ?: config('app.name');
+
+        return is_scalar($name) && (string) $name !== '' ? (string) $name : 'unknown';
     }
 }
