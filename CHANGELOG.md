@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.10.1] — 2026-10-26
+
+### Added
+
+- Suporte a Laravel 13: `~13.0` acrescentado aos seis `illuminate/*` do `composer.json`. Nenhuma mudança em `src/` — o pacote só usa API que o Laravel 13 manteve.
+
+### Compatibilidade
+
+- Verificado num esqueleto `laravel/laravel` instalado do zero (Laravel 13.38.0 e 12.70.1, PHP 8.4.27): o pacote é descoberto pelo auto-discovery, as quatro rotas aparecem em `route:list`, `liveness` responde `200` e `readiness` responde `200` com as dependências de pé e `503` com Redis indisponível.
+- Restrições para Laravel 5 a 12 inalteradas.
+
 ## [0.10.0] — 2026-08-06
 
 ### Added
